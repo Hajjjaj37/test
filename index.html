@@ -461,6 +461,7 @@
 
     <script src="config.js"></script>
     <script src="shared-storage.js"></script>
+    <script src="online-storage.js"></script>
     <script>
         let currentPosition = null;
         let currentUser = null;
@@ -840,13 +841,13 @@
         }
 
         async function saveToSharedAPI(locationData) {
-            // Utiliser la nouvelle fonction de stockage partagé
-            return await saveToSharedStorage(locationData);
+            // Utiliser le service de stockage en ligne
+            return await window.onlineStorage.saveLocation(locationData);
         }
 
         async function loadFromSharedAPI() {
-            // Utiliser la nouvelle fonction de stockage partagé
-            return await loadFromSharedStorage();
+            // Utiliser le service de stockage en ligne
+            return await window.onlineStorage.loadLocations();
         }
 
         function generateShareId() {

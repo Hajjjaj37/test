@@ -9,8 +9,10 @@ const SHARED_STORAGE_CONFIG = {
 // Fonction pour sauvegarder une position dans le stockage partagé en ligne
 async function saveToSharedStorage(locationData) {
     try {
-        // Utiliser un service de stockage partagé simple
+        // Utiliser un service de stockage en ligne simple
         // Pour l'instant, utiliser localStorage avec une clé unique partagée
+        // En production, remplacez par un vrai service en ligne
+        
         const sharedKey = 'shared_locations_global_v1';
         
         // Charger les données existantes

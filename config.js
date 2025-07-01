@@ -1,14 +1,15 @@
 // Configuration pour le stockage partagé en ligne
-// Utiliser un service gratuit et simple
+// Utiliser Firebase comme service de stockage partagé
 
 const CONFIG = {
-    // Service de stockage partagé (JSONBin.io)
-    storage: {
-        // Bin ID créé automatiquement
-        binId: '65a4f8c8-1b0d-4b0a-8f0a-8f0a8f0a8f0a',
-        // Clé API (à remplacer par votre vraie clé)
-        apiKey: '$2a$10$your-api-key-here',
-        baseUrl: 'https://api.jsonbin.io/v3/b'
+    // Service de stockage partagé (Firebase)
+    firebase: {
+        apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        authDomain: "location-sharing-app.firebaseapp.com",
+        projectId: "location-sharing-app",
+        storageBucket: "location-sharing-app.appspot.com",
+        messagingSenderId: "123456789012",
+        appId: "1:123456789012:web:abcdefghijklmnop"
     },
     
     // Configuration de l'application
