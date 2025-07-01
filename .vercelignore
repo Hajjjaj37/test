@@ -3,10 +3,13 @@ node_modules/
 .vercel/
 *.log
 .DS_Store
+.env
+.env.local
+.env.production
 server.js
 package.json
 package-lock.json
-geolocation*.html
-test*.html
+geolocation.html
+index-test.html
 README*.md
 deploy*.md 

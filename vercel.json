@@ -8,10 +8,15 @@
   ],
   "routes": [
     {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
   ],
   "outputDirectory": ".",
-  "public": true
+  "public": true,
+  "cleanUrls": true
 } 
