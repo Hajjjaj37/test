@@ -459,6 +459,7 @@
         </div>
     </div>
 
+    <script src="shared-storage.js"></script>
     <script>
         let currentPosition = null;
         let currentUser = null;
@@ -469,7 +470,7 @@
         };
         let isAdminMode = false;
         let allSharedLocations = [];
-
+        
         function updateStatus(message, type) {
             const status = document.getElementById('status');
             status.textContent = message;
@@ -838,56 +839,13 @@
         }
 
         async function saveToSharedAPI(locationData) {
-            // Simulation d'une API partagée
-            // En production, remplacez par un vrai appel fetch vers votre serveur
-            
-            // Utiliser un service de stockage partagé (ex: localStorage avec clé unique)
-            const apiKey = 'shared_locations_api_v1';
-            let allLocations = JSON.parse(localStorage.getItem(apiKey) || '[]');
-            
-            // Ajouter la nouvelle position
-            allLocations.push(locationData);
-            
-            // Limiter à 100 positions maximum pour éviter la surcharge
-            if (allLocations.length > 100) {
-                allLocations = allLocations.slice(-100);
-            }
-            
-            // Sauvegarder dans l'API partagée
-            localStorage.setItem(apiKey, JSON.stringify(allLocations));
-            
-            // Sauvegarder aussi dans l'ancien système pour compatibilité
-            let oldLocations = JSON.parse(localStorage.getItem('allSharedLocations') || '[]');
-            oldLocations.push(locationData);
-            if (oldLocations.length > 100) {
-                oldLocations = oldLocations.slice(-100);
-            }
-            localStorage.setItem('allSharedLocations', JSON.stringify(oldLocations));
-            
-            // Simuler un délai réseau
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            console.log('✅ Position sauvegardée sur l\'API partagée et systèmes locaux');
+            // Utiliser la nouvelle fonction de stockage partagé
+            return await saveToSharedStorage(locationData);
         }
 
         async function loadFromSharedAPI() {
-            // Charger depuis l'API partagée
-            const apiKey = 'shared_locations_api_v1';
-            const allLocations = JSON.parse(localStorage.getItem(apiKey) || '[]');
-            
-            // Nettoyer les positions expirées
-            const now = new Date();
-            const activeLocations = allLocations.filter(location => {
-                return new Date(location.expiresAt) > now;
-            });
-            
-            // Mettre à jour l'API si des positions ont expiré
-            if (activeLocations.length !== allLocations.length) {
-                localStorage.setItem(apiKey, JSON.stringify(activeLocations));
-                console.log(`🧹 ${allLocations.length - activeLocations.length} positions expirées supprimées`);
-            }
-            
-            return activeLocations;
+            // Utiliser la nouvelle fonction de stockage partagé
+            return await loadFromSharedStorage();
         }
 
         function generateShareId() {
@@ -1284,40 +1242,8 @@
         }
 
         function simulateExternalShare() {
-            // Simuler un utilisateur qui ouvre un lien de partage depuis une autre machine
-            const externalUsers = [
-                {
-                    name: 'Utilisateur Externe 1',
-                    phone: '+212 6 99 88 77 66',
-                    latitude: 33.5731 + (Math.random() - 0.5) * 0.01,
-                    longitude: -7.5898 + (Math.random() - 0.5) * 0.01,
-                    accuracy: 15 + Math.floor(Math.random() * 20)
-                },
-                {
-                    name: 'Utilisateur Externe 2',
-                    phone: '+212 6 11 22 33 44',
-                    latitude: 33.6072 + (Math.random() - 0.5) * 0.01,
-                    longitude: -7.5243 + (Math.random() - 0.5) * 0.01,
-                    accuracy: 20 + Math.floor(Math.random() * 15)
-                }
-            ];
-            
-            const randomUser = externalUsers[Math.floor(Math.random() * externalUsers.length)];
-            
-            const locationData = {
-                shareId: 'external_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                user: {
-                    name: randomUser.name,
-                    phone: randomUser.phone,
-                    latitude: randomUser.latitude,
-                    longitude: randomUser.longitude,
-                    accuracy: randomUser.accuracy,
-                    timestamp: Date.now()
-                },
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
-                createdAt: new Date(),
-                updatedAt: new Date()
-            };
+            // Utiliser la fonction de simulation du fichier shared-storage.js
+            const locationData = window.simulateExternalShare();
             
             // Sauvegarder dans l'API partagée
             saveToSharedAPI(locationData);
@@ -1329,7 +1255,7 @@
             updateAdminStats();
             displayAdminLocations();
             
-            updateStatus(`✅ Position de ${randomUser.name} simulée et ajoutée !`, 'success');
+            updateStatus(`✅ Position de ${locationData.user.name} simulée et ajoutée !`, 'success');
             
             console.log('🧪 Position externe simulée:', locationData);
         }
