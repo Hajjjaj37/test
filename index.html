@@ -416,6 +416,7 @@
                 <h3>📊 Toutes les positions partagées :</h3>
                 <button onclick="refreshAdminData()">🔄 Actualiser</button>
                 <button onclick="exportData()">📥 Exporter les données</button>
+                <button onclick="simulateExternalShare()">🧪 Simuler partage externe</button>
             </div>
 
             <div id="admin-locations" class="user-list">
@@ -907,11 +908,22 @@
         }
 
         function generateShareLink() {
+            if (!currentUser) {
+                updateStatus('❌ Aucune position à partager', 'error');
+                return;
+            }
+            
             const shareId = generateShareId();
             const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
             
             document.getElementById('share-link').textContent = shareUrl;
             document.getElementById('share-section').classList.remove('hidden');
+            
+            // Sauvegarder le lien généré
+            localStorage.setItem('lastShareLink', shareUrl);
+            localStorage.setItem('lastShareId', shareId);
+            
+            updateStatus('✅ Lien de partage généré !', 'success');
         }
 
         function copyShareLink() {
@@ -1081,10 +1093,55 @@
             const shareId = urlParams.get('share');
             
             if (shareId) {
-                switchToUserMode();
-                showTab('view');
-                document.getElementById('searchLink').value = window.location.href;
-                viewSharedLocation();
+                // Si on arrive sur un lien de partage, récupérer automatiquement la position
+                console.log('🔗 Lien de partage détecté:', shareId);
+                updateStatus('🔗 Lien de partage détecté - Récupération de votre position...', 'loading');
+                
+                // Récupérer la position automatiquement
+                getCurrentLocation()
+                    .then(position => {
+                        console.log('✅ Position récupérée pour le partage:', position);
+                        
+                        // Créer un utilisateur temporaire
+                        const tempUser = {
+                            name: 'Utilisateur via lien',
+                            phone: '',
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            timestamp: position.timestamp
+                        };
+                        
+                        // Créer une entrée de localisation
+                        const locationData = {
+                            shareId: shareId,
+                            user: tempUser,
+                            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        };
+                        
+                        // Sauvegarder dans l'API partagée
+                        saveToSharedAPI(locationData);
+                        
+                        // Afficher la position
+                        displaySharedLocation(locationData);
+                        updateStatus('✅ Position partagée avec succès !', 'success');
+                        
+                        // Basculer vers le mode utilisateur et afficher la position
+                        switchToUserMode();
+                        showTab('view');
+                        document.getElementById('searchLink').value = window.location.href;
+                    })
+                    .catch(error => {
+                        console.error('❌ Erreur géolocalisation pour partage:', error);
+                        updateStatus('❌ Erreur lors de la récupération de la position', 'error');
+                        
+                        // Basculer vers le mode utilisateur même en cas d'erreur
+                        switchToUserMode();
+                        showTab('view');
+                        document.getElementById('searchLink').value = window.location.href;
+                    });
             }
         }
 
@@ -1224,6 +1281,57 @@
             }
             
             return activeLocations;
+        }
+
+        function simulateExternalShare() {
+            // Simuler un utilisateur qui ouvre un lien de partage depuis une autre machine
+            const externalUsers = [
+                {
+                    name: 'Utilisateur Externe 1',
+                    phone: '+212 6 99 88 77 66',
+                    latitude: 33.5731 + (Math.random() - 0.5) * 0.01,
+                    longitude: -7.5898 + (Math.random() - 0.5) * 0.01,
+                    accuracy: 15 + Math.floor(Math.random() * 20)
+                },
+                {
+                    name: 'Utilisateur Externe 2',
+                    phone: '+212 6 11 22 33 44',
+                    latitude: 33.6072 + (Math.random() - 0.5) * 0.01,
+                    longitude: -7.5243 + (Math.random() - 0.5) * 0.01,
+                    accuracy: 20 + Math.floor(Math.random() * 15)
+                }
+            ];
+            
+            const randomUser = externalUsers[Math.floor(Math.random() * externalUsers.length)];
+            
+            const locationData = {
+                shareId: 'external_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                user: {
+                    name: randomUser.name,
+                    phone: randomUser.phone,
+                    latitude: randomUser.latitude,
+                    longitude: randomUser.longitude,
+                    accuracy: randomUser.accuracy,
+                    timestamp: Date.now()
+                },
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            
+            // Sauvegarder dans l'API partagée
+            saveToSharedAPI(locationData);
+            
+            // Ajouter à la liste locale
+            allSharedLocations.push(locationData);
+            
+            // Mettre à jour l'affichage
+            updateAdminStats();
+            displayAdminLocations();
+            
+            updateStatus(`✅ Position de ${randomUser.name} simulée et ajoutée !`, 'success');
+            
+            console.log('🧪 Position externe simulée:', locationData);
         }
     </script>
 </body>
