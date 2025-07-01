@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partage de Localisation - Admin & Utilisateur</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 10px;
+            min-width: 200px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-button {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .user-button {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .location-card {
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .location-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .location-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .location-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .share-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .share-link {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        .user-list {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .user-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #28a745;
+        }
+
+        .admin-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #dc3545;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: #f8f9fa;
+            border: none;
+            padding: 15px 30px;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .login-section {
+            background: #fff;
+            border: 2px solid #dc3545;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 400px;
+        }
+
+        .admin-header {
+            background: #dc3545;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📍 Partage de Localisation</h1>
+        
+        <div id="status" class="status loading">
+            🚀 Démarrage automatique de la géolocalisation...
+        </div>
+
+        <!-- Mode sélection -->
+        <div id="mode-selection" class="form-section">
+            <h3>🔐 Choisissez votre mode :</h3>
+            <button class="user-button" onclick="switchToUserMode()">👤 Mode Utilisateur</button>
+            <button class="admin-button" onclick="showAdminLogin()">🔒 Mode Admin</button>
+        </div>
+
+        <!-- Login Admin -->
+        <div id="admin-login" class="login-section hidden">
+            <div class="admin-header">
+                <h3>🔒 Connexion Admin</h3>
+            </div>
+            <div class="form-group">
+                <label for="adminUsername">Nom d'utilisateur :</label>
+                <input type="text" id="adminUsername" placeholder="">
+            </div>
+            <div class="form-group">
+                <label for="adminPassword">Mot de passe :</label>
+                <input type="password" id="adminPassword" placeholder="">
+            </div>
+            <button onclick="loginAdmin()">🔐 Se connecter</button>
+            <button onclick="switchToUserMode()">👤 Retour utilisateur</button>
+        </div>
+
+        <!-- Mode Utilisateur -->
+        <div id="user-mode" class="hidden">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('share')">📤 Partager ma position</button>
+                <button class="tab" onclick="showTab('view')">👥 Voir les positions</button>
+                <button class="tab" onclick="showTab('settings')">⚙️ Paramètres</button>
+            </div>
+
+            <!-- Tab 1: Partager ma position -->
+            <div id="share-tab" class="tab-content active">
+                <div class="form-section">
+                    <h3>👤 Informations personnelles :</h3>
+                    <div class="form-group">
+                        <label for="userName">Nom complet :</label>
+                        <input type="text" id="userName" placeholder="Votre nom et prénom" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userPhone">Téléphone (optionnel) :</label>
+                        <input type="tel" id="userPhone" placeholder="+33 6 12 34 56 78">
+                    </div>
+                    <div class="form-group">
+                        <label for="shareDuration">Durée de partage :</label>
+                        <select id="shareDuration">
+                            <option value="1">1 heure</option>
+                            <option value="6">6 heures</option>
+                            <option value="24" selected>24 heures</option>
+                            <option value="168">1 semaine</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="forceGeolocation()">📍 Forcer la géolocalisation</button>
+                <button onclick="shareMyLocation()">📤 Partager ma position</button>
+                <button onclick="stopSharing()">🛑 Arrêter le partage</button>
+
+                <div id="share-section" class="share-section hidden">
+                    <h3>🔗 Lien de partage :</h3>
+                    <div id="share-link" class="share-link"></div>
+                    <button onclick="copyShareLink()">📋 Copier le lien</button>
+                    <button onclick="sendViaWhatsApp()">📱 Envoyer par WhatsApp</button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Voir les positions -->
+            <div id="view-tab" class="tab-content">
+                <div class="form-section">
+                    <h3>🔍 Rechercher une position :</h3>
+                    <div class="form-group">
+                        <label for="searchLink">Lien de partage :</label>
+                        <input type="url" id="searchLink" placeholder="Collez le lien de partage ici">
+                    </div>
+                    <button onclick="viewSharedLocation()">🔍 Voir la position</button>
+                </div>
+
+                <div id="shared-locations" class="user-list hidden">
+                    <h3>📍 Positions partagées :</h3>
+                    <div id="locations-list"></div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Paramètres -->
+            <div id="settings-tab" class="tab-content">
+                <div class="form-section">
+                    <h3>⚙️ Configuration serveur :</h3>
+                    <div class="form-group">
+                        <label for="serverUrl">URL du serveur :</label>
+                        <input type="url" id="serverUrl" value="https://votre-serveur.com/api" placeholder="https://votre-serveur.com/api">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiKey">Clé API (optionnel) :</label>
+                        <input type="text" id="apiKey" placeholder="Votre clé API">
+                    </div>
+                    <button onclick="saveSettings()">💾 Sauvegarder</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode Admin -->
+        <div id="admin-mode" class="hidden">
+            <div class="admin-header">
+                <h3>🔒 Panel Administrateur</h3>
+                <p>Connecté en tant que : mohamed hajjaj</p>
+                <button onclick="logoutAdmin()">🚪 Déconnexion</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalLocations">0</div>
+                    <div class="stat-label">Positions actives</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeUsers">0</div>
+                    <div class="stat-label">Utilisateurs actifs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="expiredLocations">0</div>
+                    <div class="stat-label">Positions expirées</div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>📊 Toutes les positions partagées :</h3>
+                <button onclick="refreshAdminData()">🔄 Actualiser</button>
+                <button onclick="exportData()">📥 Exporter les données</button>
+            </div>
+
+            <div id="admin-locations" class="user-list">
+                <div id="admin-locations-list"></div>
+            </div>
+        </div>
+
+        <div id="location-display" class="location-card hidden">
+            <h3>📍 Position actuelle :</h3>
+            <div class="location-item">
+                <span class="location-label">Nom :</span>
+                <span id="displayName" class="location-value">-</span>
+            </div>
+            <div class="location-item">
+                <span class="location-label">Latitude :</span>
+                <span id="displayLat" class="location-value">-</span>
+            </div>
+            <div class="location-item">
+                <span class="location-label">Longitude :</span>
+                <span id="displayLon" class="location-value">-</span>
+            </div>
+            <div class="location-item">
+                <span class="location-label">Précision :</span>
+                <span id="displayAccuracy" class="location-value">-</span>
+            </div>
+            <div class="location-item">
+                <span class="location-label">Partagé le :</span>
+                <span id="displayTime" class="location-value">-</span>
+            </div>
+        </div>
+
+        <div id="map-section" class="hidden">
+            <h3>🗺️ Carte :</h3>
+            <div id="map-container" class="map-container"></div>
+        </div>
+
+        <div id="loading" class="hidden">
+            <div class="loading-spinner"></div>
+            <p>Traitement en cours...</p>
+        </div>
+    </div>
+
+    <script>
+        let currentPosition = null;
+        let currentUser = null;
+        let shareInterval = null;
+        let serverConfig = {
+            url: 'https://votre-serveur.com/api',
+            apiKey: ''
+        };
+        let isAdminMode = false;
+        let allSharedLocations = [];
+
+        function updateStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function switchToUserMode() {
+            document.getElementById('mode-selection').classList.add('hidden');
+            document.getElementById('admin-login').classList.add('hidden');
+            document.getElementById('admin-mode').classList.add('hidden');
+            document.getElementById('user-mode').classList.remove('hidden');
+            isAdminMode = false;
+            updateStatus('👤 Mode utilisateur activé', 'success');
+        }
+
+        function showAdminLogin() {
+            document.getElementById('mode-selection').classList.add('hidden');
+            document.getElementById('admin-login').classList.remove('hidden');
+            document.getElementById('user-mode').classList.add('hidden');
+            document.getElementById('admin-mode').classList.add('hidden');
+        }
+
+        function loginAdmin() {
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value.trim();
+
+            if (username === 'mohamed hajjaj' && password === 'mohammed 2003') {
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('admin-mode').classList.remove('hidden');
+                isAdminMode = true;
+                updateStatus('🔒 Connexion admin réussie - Récupération de votre position...', 'success');
+                
+                // Récupérer et stocker la position de l'admin
+                getCurrentLocation()
+                    .then(position => {
+                        console.log('✅ Position admin récupérée:', position);
+                        
+                        // Créer un utilisateur admin
+                        const adminUser = {
+                            name: 'mohamed hajjaj (Admin)',
+                            phone: '',
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            timestamp: position.timestamp
+                        };
+                        
+                        // Créer une entrée de localisation pour l'admin
+                        const adminLocation = {
+                            user: adminUser,
+                            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
+                            shareId: 'admin_' + Date.now(),
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        };
+                        
+                        // Stocker la position de l'admin
+                        localStorage.setItem('adminLocation', JSON.stringify(adminLocation));
+                        
+                        // Ajouter à la liste des positions partagées
+                        allSharedLocations.push(adminLocation);
+                        
+                        updateStatus('🔒 Connexion admin réussie - Position enregistrée', 'success');
+                        loadAdminData();
+                    })
+                    .catch(error => {
+                        console.error('❌ Erreur géolocalisation admin:', error);
+                        updateStatus('🔒 Connexion admin réussie (sans position)', 'warning');
+                        loadAdminData();
+                    });
+            } else {
+                updateStatus('❌ Identifiants incorrects', 'error');
+            }
+        }
+
+        function logoutAdmin() {
+            isAdminMode = false;
+            document.getElementById('admin-mode').classList.add('hidden');
+            document.getElementById('mode-selection').classList.remove('hidden');
+            updateStatus('🚪 Déconnexion admin', 'warning');
+        }
+
+        function loadAdminData() {
+            // Charger toutes les positions partagées
+            allSharedLocations = [];
+            
+            // Charger la position utilisateur
+            const sharedData = localStorage.getItem('sharedLocation');
+            if (sharedData) {
+                allSharedLocations.push(JSON.parse(sharedData));
+            }
+            
+            // Charger la position admin
+            const adminData = localStorage.getItem('adminLocation');
+            if (adminData) {
+                allSharedLocations.push(JSON.parse(adminData));
+            }
+            
+            console.log('📊 Positions chargées:', allSharedLocations);
+            updateAdminStats();
+            displayAdminLocations();
+        }
+
+        function updateAdminStats() {
+            const total = allSharedLocations.length;
+            const active = allSharedLocations.filter(loc => new Date() < new Date(loc.expiresAt)).length;
+            const expired = total - active;
+
+            document.getElementById('totalLocations').textContent = total;
+            document.getElementById('activeUsers').textContent = active;
+            document.getElementById('expiredLocations').textContent = expired;
+        }
+
+        function displayAdminLocations() {
+            const container = document.getElementById('admin-locations-list');
+            
+            if (allSharedLocations.length === 0) {
+                container.innerHTML = '<p>Aucune position partagée pour le moment.</p>';
+                return;
+            }
+
+            container.innerHTML = allSharedLocations.map(location => {
+                const user = location.user;
+                const isExpired = new Date() > new Date(location.expiresAt);
+                const statusClass = isExpired ? 'admin-item' : 'user-item';
+                const statusText = isExpired ? '❌ Expiré' : '✅ Actif';
+                
+                return `
+                    <div class="${statusClass}">
+                        <h4>👤 ${user.name}</h4>
+                        <p><strong>📱 Téléphone :</strong> ${user.phone || 'Non renseigné'}</p>
+                        <p><strong>📍 Latitude :</strong> ${user.latitude.toFixed(6)}</p>
+                        <p><strong>📍 Longitude :</strong> ${user.longitude.toFixed(6)}</p>
+                        <p><strong>🎯 Précision :</strong> ${Math.round(user.accuracy)} mètres</p>
+                        <p><strong>🕒 Partagé le :</strong> ${new Date(user.timestamp).toLocaleString()}</p>
+                        <p><strong>⏰ Expire le :</strong> ${new Date(location.expiresAt).toLocaleString()}</p>
+                        <p><strong>📊 Statut :</strong> ${statusText}</p>
+                        <button onclick="openInMaps(${user.latitude}, ${user.longitude})">🗺️ Ouvrir dans Maps</button>
+                        <button onclick="deleteLocation('${location.shareId}')">🗑️ Supprimer</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteLocation(shareId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette position ?')) {
+                // Trouver la position à supprimer
+                const locationToDelete = allSharedLocations.find(loc => loc.shareId === shareId);
+                
+                if (locationToDelete) {
+                    // Supprimer de la liste
+                    allSharedLocations = allSharedLocations.filter(loc => loc.shareId !== shareId);
+                    
+                    // Supprimer du localStorage selon le type
+                    if (shareId.startsWith('admin_')) {
+                        localStorage.removeItem('adminLocation');
+                        updateStatus('🗑️ Position admin supprimée', 'success');
+                    } else {
+                        localStorage.removeItem('sharedLocation');
+                        updateStatus('🗑️ Position utilisateur supprimée', 'success');
+                    }
+                    
+                    updateAdminStats();
+                    displayAdminLocations();
+                }
+            }
+        }
+
+        function refreshAdminData() {
+            loadAdminData();
+            updateStatus('🔄 Données actualisées', 'success');
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(allSharedLocations, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'locations_export.json';
+            link.click();
+            updateStatus('📥 Données exportées', 'success');
+        }
+
+        function showTab(tabName) {
+            // Masquer tous les tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Afficher le tab sélectionné
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                console.log('📍 Vérification de la géolocalisation...');
+                
+                if (!navigator.geolocation) {
+                    console.error('❌ Géolocalisation non supportée par ce navigateur');
+                    reject(new Error('Géolocalisation non supportée par ce navigateur'));
+                    return;
+                }
+
+                console.log('📍 Demande de permission géolocalisation...');
+                
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 30000, // 30 secondes au lieu de 20
+                    maximumAge: 60000 // Accepter une position de moins d'1 minute
+                };
+
+                console.log('📍 Options géolocalisation:', options);
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        console.log('✅ Position obtenue:', position);
+                        resolve(position);
+                    },
+                    (error) => {
+                        console.error('❌ Erreur géolocalisation:', error);
+                        reject(error);
+                    },
+                    options
+                );
+            });
+        }
+
+        async function shareMyLocation() {
+            const userName = document.getElementById('userName').value.trim();
+            const userPhone = document.getElementById('userPhone').value.trim();
+            const shareDuration = document.getElementById('shareDuration').value;
+
+            if (!userName) {
+                updateStatus('❌ Veuillez entrer votre nom', 'error');
+                return;
+            }
+
+            updateStatus('Récupération de votre position...', 'loading');
+
+            try {
+                let position;
+                
+                // Si on a déjà une position récupérée automatiquement, l'utiliser
+                if (currentUser && currentUser.latitude && currentUser.longitude) {
+                    position = {
+                        coords: {
+                            latitude: currentUser.latitude,
+                            longitude: currentUser.longitude,
+                            accuracy: currentUser.accuracy
+                        },
+                        timestamp: currentUser.timestamp
+                    };
+                    updateStatus('Utilisation de la position déjà récupérée...', 'loading');
+                } else {
+                    // Sinon, récupérer une nouvelle position
+                    position = await getCurrentLocation();
+                }
+                
+                currentPosition = position;
+                currentUser = {
+                    name: userName,
+                    phone: userPhone,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: position.timestamp
+                };
+
+                // Sauvegarder sur le serveur
+                await saveLocationToServer();
+
+                // Afficher les informations
+                displayCurrentLocation();
+                generateShareLink();
+
+                updateStatus('✅ Position partagée avec succès !', 'success');
+
+                // Démarrer le partage automatique
+                startAutoSharing(shareDuration);
+
+            } catch (error) {
+                updateStatus('❌ Erreur : ' + error.message, 'error');
+            }
+        }
+
+        async function saveLocationToServer() {
+            // Simulation d'envoi au serveur
+            // En production, remplacez par un vrai appel API
+            const locationData = {
+                user: currentUser,
+                expiresAt: new Date(Date.now() + currentUser.shareDuration * 60 * 60 * 1000),
+                shareId: generateShareId()
+            };
+
+            // Simuler un délai réseau
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Stocker localement pour la démo
+            localStorage.setItem('sharedLocation', JSON.stringify(locationData));
+            
+            return locationData;
+        }
+
+        function generateShareId() {
+            return 'share_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function displayCurrentLocation() {
+            if (!currentUser) return;
+
+            document.getElementById('displayName').textContent = currentUser.name;
+            document.getElementById('displayLat').textContent = currentUser.latitude.toFixed(6);
+            document.getElementById('displayLon').textContent = currentUser.longitude.toFixed(6);
+            document.getElementById('displayAccuracy').textContent = Math.round(currentUser.accuracy) + ' mètres';
+            document.getElementById('displayTime').textContent = new Date(currentUser.timestamp).toLocaleString();
+
+            document.getElementById('location-display').classList.remove('hidden');
+            displayMap(currentUser.latitude, currentUser.longitude);
+        }
+
+        function generateShareLink() {
+            const shareId = generateShareId();
+            const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
+            
+            document.getElementById('share-link').textContent = shareUrl;
+            document.getElementById('share-section').classList.remove('hidden');
+        }
+
+        function copyShareLink() {
+            const shareLink = document.getElementById('share-link').textContent;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareLink).then(() => {
+                    updateStatus('✅ Lien copié !', 'success');
+                });
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = shareLink;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                updateStatus('✅ Lien copié !', 'success');
+            }
+        }
+
+        function sendViaWhatsApp() {
+            const shareLink = document.getElementById('share-link').textContent;
+            const message = `📍 ${currentUser.name} vous partage sa position : ${shareLink}`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        async function viewSharedLocation() {
+            const searchLink = document.getElementById('searchLink').value.trim();
+            
+            if (!searchLink) {
+                updateStatus('❌ Veuillez entrer un lien de partage', 'error');
+                return;
+            }
+
+            updateStatus('Récupération de la position partagée...', 'loading');
+
+            try {
+                // Simuler la récupération depuis le serveur
+                const sharedData = JSON.parse(localStorage.getItem('sharedLocation'));
+                
+                if (sharedData) {
+                    displaySharedLocation(sharedData);
+                    updateStatus('✅ Position récupérée !', 'success');
+                } else {
+                    updateStatus('❌ Position non trouvée ou expirée', 'error');
+                }
+
+            } catch (error) {
+                updateStatus('❌ Erreur lors de la récupération', 'error');
+            }
+        }
+
+        function displaySharedLocation(sharedData) {
+            const user = sharedData.user;
+            
+            const locationsList = document.getElementById('locations-list');
+            locationsList.innerHTML = `
+                <div class="user-item">
+                    <h4>👤 ${user.name}</h4>
+                    <p><strong>📱 Téléphone :</strong> ${user.phone || 'Non renseigné'}</p>
+                    <p><strong>📍 Latitude :</strong> ${user.latitude.toFixed(6)}</p>
+                    <p><strong>📍 Longitude :</strong> ${user.longitude.toFixed(6)}</p>
+                    <p><strong>🎯 Précision :</strong> ${Math.round(user.accuracy)} mètres</p>
+                    <p><strong>🕒 Partagé le :</strong> ${new Date(user.timestamp).toLocaleString()}</p>
+                    <button onclick="openInMaps(${user.latitude}, ${user.longitude})">🗺️ Ouvrir dans Maps</button>
+                </div>
+            `;
+
+            document.getElementById('shared-locations').classList.remove('hidden');
+            displayMap(user.latitude, user.longitude);
+        }
+
+        function displayMap(lat, lon) {
+            const mapContainer = document.getElementById('map-container');
+            
+            mapContainer.innerHTML = `
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0" 
+                    scrolling="no" 
+                    marginheight="0" 
+                    marginwidth="0" 
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.01},${lat-0.01},${lon+0.01},${lat+0.01}&layer=mapnik&marker=${lat},${lon}"
+                ></iframe>
+            `;
+            
+            document.getElementById('map-section').classList.remove('hidden');
+        }
+
+        function openInMaps(lat, lon) {
+            const googleMapsUrl = `https://maps.google.com/?q=${lat},${lon}`;
+            const appleMapsUrl = `https://maps.apple.com/?q=${lat},${lon}`;
+            
+            window.open(googleMapsUrl, '_blank');
+            window.open(appleMapsUrl, '_blank');
+        }
+
+        function startAutoSharing(duration) {
+            // Arrêter le partage précédent s'il existe
+            if (shareInterval) {
+                clearInterval(shareInterval);
+            }
+
+            // Mettre à jour la position toutes les 5 minutes
+            shareInterval = setInterval(async () => {
+                try {
+                    const position = await getCurrentLocation();
+                    currentPosition = position;
+                    currentUser.latitude = position.coords.latitude;
+                    currentUser.longitude = position.coords.longitude;
+                    currentUser.accuracy = position.coords.accuracy;
+                    currentUser.timestamp = position.timestamp;
+
+                    await saveLocationToServer();
+                    displayCurrentLocation();
+                    
+                    console.log('Position mise à jour automatiquement');
+                } catch (error) {
+                    console.error('Erreur mise à jour automatique:', error);
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+
+            // Arrêter le partage après la durée spécifiée
+            setTimeout(() => {
+                stopSharing();
+            }, duration * 60 * 60 * 1000);
+        }
+
+        function stopSharing() {
+            if (shareInterval) {
+                clearInterval(shareInterval);
+                shareInterval = null;
+            }
+
+            currentPosition = null;
+            currentUser = null;
+
+            document.getElementById('location-display').classList.add('hidden');
+            document.getElementById('share-section').classList.add('hidden');
+            document.getElementById('map-section').classList.add('hidden');
+
+            updateStatus('🛑 Partage arrêté', 'warning');
+        }
+
+        function saveSettings() {
+            serverConfig.url = document.getElementById('serverUrl').value;
+            serverConfig.apiKey = document.getElementById('apiKey').value;
+            
+            localStorage.setItem('serverConfig', JSON.stringify(serverConfig));
+            updateStatus('✅ Paramètres sauvegardés !', 'success');
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('serverConfig');
+            if (saved) {
+                serverConfig = JSON.parse(saved);
+                document.getElementById('serverUrl').value = serverConfig.url;
+                document.getElementById('apiKey').value = serverConfig.apiKey;
+            }
+        }
+
+        // Vérifier si on arrive sur un lien de partage
+        function checkShareLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareId = urlParams.get('share');
+            
+            if (shareId) {
+                switchToUserMode();
+                showTab('view');
+                document.getElementById('searchLink').value = window.location.href;
+                viewSharedLocation();
+            }
+        }
+
+        // Initialisation
+        window.onload = function() {
+            console.log('🚀 Démarrage de l\'application...');
+            updateStatus('🚀 Démarrage automatique de la géolocalisation...', 'loading');
+            loadSettings();
+            checkShareLink();
+            
+            // Pré-remplir le nom immédiatement
+            document.getElementById('userName').value = 'Utilisateur';
+            
+            // Démarrer automatiquement la géolocalisation immédiatement
+            startAutoGeolocation();
+        };
+
+        function startAutoGeolocation() {
+            console.log('📍 Démarrage automatique de la géolocalisation...');
+            updateStatus('📍 Récupération de votre position GPS...', 'loading');
+            
+            // Essayer de récupérer la position immédiatement
+            getCurrentLocation()
+                .then(position => {
+                    console.log('✅ Position récupérée avec succès:', position);
+                    
+                    // Créer un utilisateur temporaire pour l'affichage
+                    currentUser = {
+                        name: 'Utilisateur',
+                        phone: '',
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: position.timestamp
+                    };
+                    
+                    // Afficher la position actuelle
+                    displayCurrentLocation();
+                    updateStatus('✅ Position récupérée ! Prêt à partager', 'success');
+                })
+                .catch(error => {
+                    console.error('❌ Erreur géolocalisation:', error);
+                    
+                    // Messages d'erreur plus spécifiques
+                    let errorMessage = 'Erreur de géolocalisation';
+                    if (error.code === 1) {
+                        errorMessage = 'Permission refusée - Autorisez la géolocalisation dans votre navigateur';
+                    } else if (error.code === 2) {
+                        errorMessage = 'Position indisponible - Vérifiez votre connexion GPS';
+                    } else if (error.code === 3) {
+                        errorMessage = 'Délai dépassé - La géolocalisation prend trop de temps';
+                    } else {
+                        errorMessage = error.message;
+                    }
+                    
+                    updateStatus('❌ ' + errorMessage + ' - Cliquez sur "Partager ma position" pour réessayer', 'error');
+                });
+        }
+
+        function forceGeolocation() {
+            updateStatus('📍 Forçage de la géolocalisation...', 'loading');
+            startAutoGeolocation();
+        }
+    </script>
+</body>
+</html> 
