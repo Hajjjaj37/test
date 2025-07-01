@@ -558,13 +558,57 @@
                 updateStatus('📊 Chargement des données depuis l\'API partagée...', 'loading');
                 
                 // Charger depuis l'API partagée
-                allSharedLocations = await loadFromSharedAPI();
+                const apiLocations = await loadFromSharedAPI();
                 
-                console.log('📊 Positions chargées depuis l\'API:', allSharedLocations);
+                // Charger aussi les positions stockées localement
+                const localSharedLocation = localStorage.getItem('sharedLocation');
+                const localAdminLocation = localStorage.getItem('adminLocation');
+                
+                // Combiner toutes les positions
+                allSharedLocations = [...apiLocations];
+                
+                // Ajouter la position partagée locale si elle existe
+                if (localSharedLocation) {
+                    try {
+                        const sharedData = JSON.parse(localSharedLocation);
+                        // Vérifier si elle n'est pas déjà dans la liste
+                        const exists = allSharedLocations.find(loc => loc.shareId === sharedData.shareId);
+                        if (!exists) {
+                            allSharedLocations.push(sharedData);
+                        }
+                    } catch (e) {
+                        console.error('Erreur parsing sharedLocation:', e);
+                    }
+                }
+                
+                // Ajouter la position admin locale si elle existe
+                if (localAdminLocation) {
+                    try {
+                        const adminData = JSON.parse(localAdminLocation);
+                        // Vérifier si elle n'est pas déjà dans la liste
+                        const exists = allSharedLocations.find(loc => loc.shareId === adminData.shareId);
+                        if (!exists) {
+                            allSharedLocations.push(adminData);
+                        }
+                    } catch (e) {
+                        console.error('Erreur parsing adminLocation:', e);
+                    }
+                }
+                
+                // Charger aussi depuis l'ancien système de stockage
+                const oldLocations = JSON.parse(localStorage.getItem('allSharedLocations') || '[]');
+                oldLocations.forEach(oldLoc => {
+                    const exists = allSharedLocations.find(loc => loc.shareId === oldLoc.shareId);
+                    if (!exists) {
+                        allSharedLocations.push(oldLoc);
+                    }
+                });
+                
+                console.log('📊 Toutes les positions chargées:', allSharedLocations);
                 updateAdminStats();
                 displayAdminLocations();
                 
-                updateStatus('✅ Données chargées avec succès', 'success');
+                updateStatus(`✅ ${allSharedLocations.length} positions chargées avec succès`, 'success');
             } catch (error) {
                 console.error('❌ Erreur chargement API:', error);
                 updateStatus('❌ Erreur chargement des données', 'error');
@@ -808,13 +852,21 @@
                 allLocations = allLocations.slice(-100);
             }
             
-            // Sauvegarder
+            // Sauvegarder dans l'API partagée
             localStorage.setItem(apiKey, JSON.stringify(allLocations));
+            
+            // Sauvegarder aussi dans l'ancien système pour compatibilité
+            let oldLocations = JSON.parse(localStorage.getItem('allSharedLocations') || '[]');
+            oldLocations.push(locationData);
+            if (oldLocations.length > 100) {
+                oldLocations = oldLocations.slice(-100);
+            }
+            localStorage.setItem('allSharedLocations', JSON.stringify(oldLocations));
             
             // Simuler un délai réseau
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            console.log('✅ Position sauvegardée sur l\'API partagée');
+            console.log('✅ Position sauvegardée sur l\'API partagée et systèmes locaux');
         }
 
         async function loadFromSharedAPI() {
@@ -1036,6 +1088,62 @@
             }
         }
 
+        // Fonction pour créer des positions d'utilisateurs de test
+        function createTestUserLocations() {
+            const testUsers = [
+                {
+                    name: 'Ahmed Benali',
+                    phone: '+212 6 12 34 56 78',
+                    latitude: 33.5731,
+                    longitude: -7.5898,
+                    accuracy: 15
+                },
+                {
+                    name: 'Fatima Zahra',
+                    phone: '+212 6 98 76 54 32',
+                    latitude: 33.6072,
+                    longitude: -7.5243,
+                    accuracy: 20
+                },
+                {
+                    name: 'Mohammed Alami',
+                    phone: '+212 6 55 44 33 22',
+                    latitude: 33.5953,
+                    longitude: -7.6322,
+                    accuracy: 25
+                },
+                {
+                    name: 'Amina Tazi',
+                    phone: '+212 6 11 22 33 44',
+                    latitude: 33.5897,
+                    longitude: -7.6031,
+                    accuracy: 18
+                }
+            ];
+
+            testUsers.forEach((user, index) => {
+                const locationData = {
+                    shareId: 'test_user_' + (index + 1) + '_' + Date.now(),
+                    user: {
+                        name: user.name,
+                        phone: user.phone,
+                        latitude: user.latitude,
+                        longitude: user.longitude,
+                        accuracy: user.accuracy,
+                        timestamp: Date.now() - (index * 3600000) // Chaque utilisateur a partagé il y a X heures
+                    },
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
+                    createdAt: new Date(Date.now() - (index * 3600000)),
+                    updatedAt: new Date()
+                };
+
+                // Sauvegarder dans l'API partagée
+                saveToSharedAPI(locationData);
+            });
+
+            console.log('✅ Positions d\'utilisateurs de test créées');
+        }
+
         // Initialisation
         window.onload = function() {
             console.log('🚀 Démarrage de l\'application...');
@@ -1045,6 +1153,9 @@
             
             // Pré-remplir le nom immédiatement
             document.getElementById('userName').value = 'Utilisateur';
+            
+            // Créer des positions d'utilisateurs de test (pour la démo)
+            createTestUserLocations();
             
             // Démarrer automatiquement la géolocalisation immédiatement
             startAutoGeolocation();
