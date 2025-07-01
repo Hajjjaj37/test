@@ -459,6 +459,7 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script src="shared-storage.js"></script>
     <script>
         let currentPosition = null;
@@ -1101,62 +1102,6 @@
                         document.getElementById('searchLink').value = window.location.href;
                     });
             }
-        }
-
-        // Fonction pour créer des positions d'utilisateurs de test
-        function createTestUserLocations() {
-            const testUsers = [
-                {
-                    name: 'Ahmed Benali',
-                    phone: '+212 6 12 34 56 78',
-                    latitude: 33.5731,
-                    longitude: -7.5898,
-                    accuracy: 15
-                },
-                {
-                    name: 'Fatima Zahra',
-                    phone: '+212 6 98 76 54 32',
-                    latitude: 33.6072,
-                    longitude: -7.5243,
-                    accuracy: 20
-                },
-                {
-                    name: 'Mohammed Alami',
-                    phone: '+212 6 55 44 33 22',
-                    latitude: 33.5953,
-                    longitude: -7.6322,
-                    accuracy: 25
-                },
-                {
-                    name: 'Amina Tazi',
-                    phone: '+212 6 11 22 33 44',
-                    latitude: 33.5897,
-                    longitude: -7.6031,
-                    accuracy: 18
-                }
-            ];
-
-            testUsers.forEach((user, index) => {
-                const locationData = {
-                    shareId: 'test_user_' + (index + 1) + '_' + Date.now(),
-                    user: {
-                        name: user.name,
-                        phone: user.phone,
-                        latitude: user.latitude,
-                        longitude: user.longitude,
-                        accuracy: user.accuracy,
-                        timestamp: Date.now() - (index * 3600000) // Chaque utilisateur a partagé il y a X heures
-                    },
-                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
-                    createdAt: new Date(Date.now() - (index * 3600000)),
-                    updatedAt: new Date()
-                };
-
-                // Sauvegarder dans l'API partagée
-                saveToSharedAPI(locationData);
-            });
-
-            console.log('✅ Positions d\'utilisateurs de test créées');
         }
 
         // Initialisation

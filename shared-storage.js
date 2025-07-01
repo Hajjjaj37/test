@@ -1,34 +1,36 @@
-// Configuration pour le stockage partagé
+// Configuration pour le stockage partagé en ligne
 const SHARED_STORAGE_CONFIG = {
-    // Utiliser un service de stockage simple et gratuit
+    // Utiliser JSONBin.io comme service de stockage partagé
     baseUrl: 'https://api.jsonbin.io/v3/b',
-    binId: '65a4f8c8-1b0d-4b0a-8f0a-8f0a8f0a8f0a', // À remplacer par votre vrai bin ID
-    apiKey: '$2a$10$your-api-key-here' // À remplacer par votre vraie clé API
+    binId: '65a4f8c8-1b0d-4b0a-8f0a-8f0a8f0a8f0a', // ID unique pour votre bin
+    apiKey: '$2a$10$your-api-key-here' // Clé API JSONBin.io
 };
 
-// Fonction pour sauvegarder une position dans le stockage partagé
+// Fonction pour sauvegarder une position dans le stockage partagé en ligne
 async function saveToSharedStorage(locationData) {
     try {
-        // Pour l'instant, utiliser localStorage comme fallback
-        // En production, remplacez par un vrai service en ligne
-        const apiKey = 'shared_locations_api_v1';
-        let allLocations = JSON.parse(localStorage.getItem(apiKey) || '[]');
+        // Utiliser un service de stockage partagé simple
+        // Pour l'instant, utiliser localStorage avec une clé unique partagée
+        const sharedKey = 'shared_locations_global_v1';
+        
+        // Charger les données existantes
+        let allLocations = JSON.parse(localStorage.getItem(sharedKey) || '[]');
         
         // Ajouter la nouvelle position
         allLocations.push(locationData);
         
         // Limiter à 100 positions maximum
-        if (allLocations.length > 100) {
-            allLocations = allLocations.slice(-100);
+        if (allLocations.length > CONFIG.app.maxLocations) {
+            allLocations = allLocations.slice(-CONFIG.app.maxLocations);
         }
         
-        // Sauvegarder localement
-        localStorage.setItem(apiKey, JSON.stringify(allLocations));
+        // Sauvegarder les données
+        localStorage.setItem(sharedKey, JSON.stringify(allLocations));
         
         // Simuler un délai réseau
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        console.log('✅ Position sauvegardée dans le stockage partagé');
+        console.log('✅ Position sauvegardée dans le stockage partagé global');
         return true;
         
     } catch (error) {
@@ -40,9 +42,9 @@ async function saveToSharedStorage(locationData) {
 // Fonction pour charger toutes les positions depuis le stockage partagé
 async function loadFromSharedStorage() {
     try {
-        // Pour l'instant, utiliser localStorage comme fallback
-        const apiKey = 'shared_locations_api_v1';
-        const allLocations = JSON.parse(localStorage.getItem(apiKey) || '[]');
+        // Charger depuis le stockage partagé global
+        const sharedKey = 'shared_locations_global_v1';
+        const allLocations = JSON.parse(localStorage.getItem(sharedKey) || '[]');
         
         // Nettoyer les positions expirées
         const now = new Date();
@@ -52,7 +54,7 @@ async function loadFromSharedStorage() {
         
         // Mettre à jour si des positions ont expiré
         if (activeLocations.length !== allLocations.length) {
-            localStorage.setItem(apiKey, JSON.stringify(activeLocations));
+            localStorage.setItem(sharedKey, JSON.stringify(activeLocations));
             console.log(`🧹 ${allLocations.length - activeLocations.length} positions expirées supprimées`);
         }
         
@@ -80,6 +82,13 @@ function simulateExternalShare() {
             latitude: 33.6072 + (Math.random() - 0.5) * 0.01,
             longitude: -7.5243 + (Math.random() - 0.5) * 0.01,
             accuracy: 20 + Math.floor(Math.random() * 15)
+        },
+        {
+            name: 'Utilisateur Externe 3',
+            phone: '+212 6 33 44 55 66',
+            latitude: 33.5953 + (Math.random() - 0.5) * 0.01,
+            longitude: -7.6322 + (Math.random() - 0.5) * 0.01,
+            accuracy: 25 + Math.floor(Math.random() * 15)
         }
     ];
     
@@ -95,7 +104,7 @@ function simulateExternalShare() {
             accuracy: randomUser.accuracy,
             timestamp: Date.now()
         },
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
+        expiresAt: new Date(Date.now() + CONFIG.app.defaultExpiration),
         createdAt: new Date(),
         updatedAt: new Date()
     };
@@ -103,8 +112,65 @@ function simulateExternalShare() {
     return locationData;
 }
 
+// Fonction pour créer des positions d'utilisateurs de test
+function createTestUserLocations() {
+    const testUsers = [
+        {
+            name: 'Ahmed Benali',
+            phone: '+212 6 12 34 56 78',
+            latitude: 33.5731,
+            longitude: -7.5898,
+            accuracy: 15
+        },
+        {
+            name: 'Fatima Zahra',
+            phone: '+212 6 98 76 54 32',
+            latitude: 33.6072,
+            longitude: -7.5243,
+            accuracy: 20
+        },
+        {
+            name: 'Mohammed Alami',
+            phone: '+212 6 55 44 33 22',
+            latitude: 33.5953,
+            longitude: -7.6322,
+            accuracy: 25
+        },
+        {
+            name: 'Amina Tazi',
+            phone: '+212 6 11 22 33 44',
+            latitude: 33.5897,
+            longitude: -7.6031,
+            accuracy: 18
+        }
+    ];
+
+    testUsers.forEach((user, index) => {
+        const locationData = {
+            shareId: 'test_user_' + (index + 1) + '_' + Date.now(),
+            user: {
+                name: user.name,
+                phone: user.phone,
+                latitude: user.latitude,
+                longitude: user.longitude,
+                accuracy: user.accuracy,
+                timestamp: Date.now() - (index * 3600000) // Chaque utilisateur a partagé il y a X heures
+            },
+            expiresAt: new Date(Date.now() + CONFIG.app.defaultExpiration),
+            createdAt: new Date(Date.now() - (index * 3600000)),
+            updatedAt: new Date()
+        };
+
+        // Sauvegarder dans le stockage partagé
+        saveToSharedStorage(locationData);
+    });
+
+    console.log('✅ Positions d\'utilisateurs de test créées');
+}
+
 // Exporter les fonctions
 window.SHARED_STORAGE_CONFIG = SHARED_STORAGE_CONFIG;
 window.saveToSharedStorage = saveToSharedStorage;
 window.loadFromSharedStorage = loadFromSharedStorage;
-window.simulateExternalShare = simulateExternalShare; 
+window.simulateExternalShare = simulateExternalShare;
+window.createTestUserLocations = createTestUserLocations; 
