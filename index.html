@@ -518,14 +518,19 @@
                         
                         // Créer une entrée de localisation pour l'admin
                         const adminLocation = {
+                            shareId: 'admin_' + Date.now(),
                             user: adminUser,
                             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 heures
-                            shareId: 'admin_' + Date.now(),
                             createdAt: new Date(),
                             updatedAt: new Date()
                         };
                         
-                        // Stocker la position de l'admin
+                        // Stocker la position de l'admin dans le localStorage global
+                        let allLocations = JSON.parse(localStorage.getItem('allSharedLocations') || '[]');
+                        allLocations.push(adminLocation);
+                        localStorage.setItem('allSharedLocations', JSON.stringify(allLocations));
+                        
+                        // Stocker aussi localement
                         localStorage.setItem('adminLocation', JSON.stringify(adminLocation));
                         
                         // Ajouter à la liste des positions partagées
@@ -552,20 +557,11 @@
         }
 
         function loadAdminData() {
-            // Charger toutes les positions partagées
-            allSharedLocations = [];
+            // Nettoyer les positions expirées
+            cleanupExpiredLocations();
             
-            // Charger la position utilisateur
-            const sharedData = localStorage.getItem('sharedLocation');
-            if (sharedData) {
-                allSharedLocations.push(JSON.parse(sharedData));
-            }
-            
-            // Charger la position admin
-            const adminData = localStorage.getItem('adminLocation');
-            if (adminData) {
-                allSharedLocations.push(JSON.parse(adminData));
-            }
+            // Charger toutes les positions partagées depuis le localStorage global
+            allSharedLocations = JSON.parse(localStorage.getItem('allSharedLocations') || '[]');
             
             console.log('📊 Positions chargées:', allSharedLocations);
             updateAdminStats();
@@ -622,7 +618,10 @@
                     // Supprimer de la liste
                     allSharedLocations = allSharedLocations.filter(loc => loc.shareId !== shareId);
                     
-                    // Supprimer du localStorage selon le type
+                    // Supprimer du localStorage global
+                    localStorage.setItem('allSharedLocations', JSON.stringify(allSharedLocations));
+                    
+                    // Supprimer du localStorage local selon le type
                     if (shareId.startsWith('admin_')) {
                         localStorage.removeItem('adminLocation');
                         updateStatus('🗑️ Position admin supprimée', 'success');
@@ -760,18 +759,25 @@
         }
 
         async function saveLocationToServer() {
-            // Simulation d'envoi au serveur
-            // En production, remplacez par un vrai appel API
+            // Créer un ID unique pour cette position
+            const shareId = generateShareId();
             const locationData = {
+                shareId: shareId,
                 user: currentUser,
                 expiresAt: new Date(Date.now() + currentUser.shareDuration * 60 * 60 * 1000),
-                shareId: generateShareId()
+                createdAt: new Date(),
+                updatedAt: new Date()
             };
 
             // Simuler un délai réseau
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Stocker localement pour la démo
+            // Stocker dans localStorage global (pour que l'admin puisse voir toutes les positions)
+            let allLocations = JSON.parse(localStorage.getItem('allSharedLocations') || '[]');
+            allLocations.push(locationData);
+            localStorage.setItem('allSharedLocations', JSON.stringify(allLocations));
+            
+            // Stocker aussi localement pour la démo
             localStorage.setItem('sharedLocation', JSON.stringify(locationData));
             
             return locationData;
@@ -1035,6 +1041,24 @@
         function forceGeolocation() {
             updateStatus('📍 Forçage de la géolocalisation...', 'loading');
             startAutoGeolocation();
+        }
+
+        function cleanupExpiredLocations() {
+            let allLocations = JSON.parse(localStorage.getItem('allSharedLocations') || '[]');
+            const now = new Date();
+            
+            // Filtrer les positions non expirées
+            const activeLocations = allLocations.filter(location => {
+                return new Date(location.expiresAt) > now;
+            });
+            
+            // Si des positions ont été supprimées, mettre à jour le localStorage
+            if (activeLocations.length !== allLocations.length) {
+                localStorage.setItem('allSharedLocations', JSON.stringify(activeLocations));
+                console.log(`🧹 ${allLocations.length - activeLocations.length} positions expirées supprimées`);
+            }
+            
+            return activeLocations;
         }
     </script>
 </body>
