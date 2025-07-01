@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partage de Localisation - Admin & Utilisateur</title>
+    <title>Test Partage de Localisation - Admin & Utilisateur</title>
     <style>
         * {
             margin: 0;
@@ -282,7 +282,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>📍 Partage de Localisation</h1>
+        <h1>🧪 Test Partage de Localisation</h1>
         
         <div id="status" class="status loading">
             🚀 Démarrage automatique de la géolocalisation...
@@ -1038,13 +1038,13 @@
 
         // Initialisation
         window.onload = function() {
-            console.log('🚀 Démarrage de l\'application...');
+            console.log('🚀 Démarrage de l\'application de test...');
             updateStatus('🚀 Démarrage automatique de la géolocalisation...', 'loading');
             loadSettings();
             checkShareLink();
             
             // Pré-remplir le nom immédiatement
-            document.getElementById('userName').value = 'Utilisateur';
+            document.getElementById('userName').value = 'Utilisateur Test';
             
             // Démarrer automatiquement la géolocalisation immédiatement
             startAutoGeolocation();
@@ -1061,7 +1061,7 @@
                     
                     // Créer un utilisateur temporaire pour l'affichage
                     currentUser = {
-                        name: 'Utilisateur',
+                        name: 'Utilisateur Test',
                         phone: '',
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude,
