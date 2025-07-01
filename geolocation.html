@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Géolocalisation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 2px solid #bbdefb;
+        }
+
+        .status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 2px solid #c8e6c9;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #ffcdd2;
+        }
+
+        .coordinates {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+        }
+
+        .coordinate-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .coordinate-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .coordinate-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            min-width: 150px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .server-input {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .server-input label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .server-input input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .server-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .response.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 2px solid #c8e6c9;
+        }
+
+        .response.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #ffcdd2;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📍 Géolocalisation</h1>
+        
+        <div id="status" class="status loading">
+            Demande d'autorisation de géolocalisation...
+        </div>
+
+        <div id="coordinates" class="coordinates hidden">
+            <h3>Vos coordonnées :</h3>
+            <div class="coordinate-item">
+                <span class="coordinate-label">Latitude :</span>
+                <span id="latitude" class="coordinate-value">-</span>
+            </div>
+            <div class="coordinate-item">
+                <span class="coordinate-label">Longitude :</span>
+                <span id="longitude" class="coordinate-value">-</span>
+            </div>
+            <div class="coordinate-item">
+                <span class="coordinate-label">Précision :</span>
+                <span id="accuracy" class="coordinate-value">-</span>
+            </div>
+        </div>
+
+        <div id="server-section" class="hidden">
+            <div class="server-input">
+                <label for="server-url">URL du serveur :</label>
+                <input type="url" id="server-url" placeholder="https://votre-serveur.com/api/coordinates" value="https://httpbin.org/post">
+            </div>
+            
+            <button id="send-btn" onclick="sendCoordinates()">
+                Envoyer au serveur
+            </button>
+        </div>
+
+        <div id="response" class="response hidden"></div>
+    </div>
+
+    <script>
+        let currentPosition = null;
+
+        // Fonction pour formater les coordonnées
+        function formatCoordinate(coord) {
+            return coord.toFixed(6);
+        }
+
+        // Fonction pour formater la précision
+        function formatAccuracy(accuracy) {
+            return `${Math.round(accuracy)} mètres`;
+        }
+
+        // Fonction pour mettre à jour l'affichage des coordonnées
+        function updateCoordinatesDisplay(position) {
+            document.getElementById('latitude').textContent = formatCoordinate(position.coords.latitude);
+            document.getElementById('longitude').textContent = formatCoordinate(position.coords.longitude);
+            document.getElementById('accuracy').textContent = formatAccuracy(position.coords.accuracy);
+            
+            document.getElementById('coordinates').classList.remove('hidden');
+            document.getElementById('server-section').classList.remove('hidden');
+        }
+
+        // Fonction pour gérer le succès de la géolocalisation
+        function handleGeolocationSuccess(position) {
+            currentPosition = position;
+            
+            document.getElementById('status').className = 'status success';
+            document.getElementById('status').textContent = 'Géolocalisation réussie !';
+            
+            updateCoordinatesDisplay(position);
+        }
+
+        // Fonction pour gérer les erreurs de géolocalisation
+        function handleGeolocationError(error) {
+            let errorMessage = '';
+            
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = 'Accès à la géolocalisation refusé par l\'utilisateur.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = 'Informations de localisation indisponibles.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = 'Délai d\'attente dépassé pour la géolocalisation.';
+                    break;
+                case error.UNKNOWN_ERROR:
+                    errorMessage = 'Erreur inconnue lors de la géolocalisation.';
+                    break;
+                default:
+                    errorMessage = 'Erreur lors de la géolocalisation.';
+            }
+            
+            document.getElementById('status').className = 'status error';
+            document.getElementById('status').textContent = errorMessage;
+        }
+
+        // Fonction pour envoyer les coordonnées au serveur
+        async function sendCoordinates() {
+            if (!currentPosition) {
+                alert('Aucune position disponible. Veuillez autoriser la géolocalisation.');
+                return;
+            }
+
+            const serverUrl = document.getElementById('server-url').value.trim();
+            if (!serverUrl) {
+                alert('Veuillez entrer une URL de serveur valide.');
+                return;
+            }
+
+            const sendBtn = document.getElementById('send-btn');
+            const responseDiv = document.getElementById('response');
+            
+            // Préparer les données à envoyer
+            const data = {
+                latitude: currentPosition.coords.latitude,
+                longitude: currentPosition.coords.longitude,
+                accuracy: currentPosition.coords.accuracy,
+                timestamp: currentPosition.timestamp,
+                timestampISO: new Date(currentPosition.timestamp).toISOString()
+            };
+
+            try {
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Envoi en cours...';
+                
+                responseDiv.className = 'response';
+                responseDiv.textContent = 'Envoi des données...';
+                responseDiv.classList.remove('hidden');
+
+                const response = await fetch(serverUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const responseData = await response.json();
+                
+                responseDiv.className = 'response success';
+                responseDiv.innerHTML = `
+                    <strong>Réponse du serveur (${response.status}):</strong><br>
+                    <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                `;
+
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.innerHTML = `
+                    <strong>Erreur lors de l'envoi:</strong><br>
+                    ${error.message}
+                `;
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Envoyer au serveur';
+            }
+        }
+
+        // Vérifier si la géolocalisation est supportée
+        if (!navigator.geolocation) {
+            document.getElementById('status').className = 'status error';
+            document.getElementById('status').textContent = 'La géolocalisation n\'est pas supportée par ce navigateur.';
+        } else {
+            // Demander la géolocalisation avec des options
+            const options = {
+                enableHighAccuracy: true,  // Demander la meilleure précision possible
+                timeout: 10000,           // Timeout de 10 secondes
+                maximumAge: 60000         // Accepter une position de moins d'1 minute
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                handleGeolocationSuccess,
+                handleGeolocationError,
+                options
+            );
+        }
+
+        // Fonction pour rafraîchir la position
+        function refreshPosition() {
+            if (navigator.geolocation) {
+                document.getElementById('status').className = 'status loading';
+                document.getElementById('status').textContent = 'Actualisation de la position...';
+                
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0  // Toujours obtenir une nouvelle position
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    handleGeolocationSuccess,
+                    handleGeolocationError,
+                    options
+                );
+            }
+        }
+
+        // Ajouter un bouton de rafraîchissement (optionnel)
+        setTimeout(() => {
+            if (currentPosition) {
+                const refreshBtn = document.createElement('button');
+                refreshBtn.textContent = 'Actualiser la position';
+                refreshBtn.onclick = refreshPosition;
+                refreshBtn.style.marginTop = '10px';
+                document.getElementById('coordinates').appendChild(refreshBtn);
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 
