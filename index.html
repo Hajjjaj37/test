@@ -417,6 +417,7 @@
                 <button onclick="refreshAdminData()">🔄 Actualiser</button>
                 <button onclick="exportData()">📥 Exporter les données</button>
                 <button onclick="simulateExternalShare()">🧪 Simuler partage externe</button>
+                <button onclick="cleanupTestData()">🧹 Nettoyer les données de test</button>
             </div>
 
             <div id="admin-locations" class="user-list">
@@ -1115,9 +1116,6 @@
             // Pré-remplir le nom immédiatement
             document.getElementById('userName').value = 'Utilisateur';
             
-            // Créer des positions d'utilisateurs de test (pour la démo)
-            createTestUserLocations();
-            
             // Démarrer automatiquement la géolocalisation immédiatement
             startAutoGeolocation();
         };
@@ -1204,6 +1202,35 @@
             updateStatus(`✅ Position de ${locationData.user.name} simulée et ajoutée !`, 'success');
             
             console.log('🧪 Position externe simulée:', locationData);
+        }
+
+        function cleanupTestData() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer toutes les données de test ?')) {
+                // Nettoyer les données de test
+                const sharedKey = 'shared_locations_global_v1';
+                let allLocations = JSON.parse(localStorage.getItem(sharedKey) || '[]');
+                
+                // Supprimer les positions de test
+                const filteredLocations = allLocations.filter(location => {
+                    // Garder seulement les positions qui ne sont pas des tests
+                    return !location.shareId.startsWith('test_user_') && 
+                           !location.shareId.startsWith('external_');
+                });
+                
+                // Sauvegarder les données nettoyées
+                localStorage.setItem(sharedKey, JSON.stringify(filteredLocations));
+                
+                // Mettre à jour la liste locale
+                allSharedLocations = filteredLocations;
+                
+                // Mettre à jour l'affichage
+                updateAdminStats();
+                displayAdminLocations();
+                
+                updateStatus(`✅ ${allLocations.length - filteredLocations.length} données de test supprimées !`, 'success');
+                
+                console.log('🧹 Données de test supprimées');
+            }
         }
     </script>
 </body>
